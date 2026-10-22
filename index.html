@@ -1,0 +1,114 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#10131c" />
+  <meta name="description" content="Improve your typing speed with TypeRush." />
+  <title>TypeRush — Typing Speed Game</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="header">
+      <a class="logo" href="#" aria-label="TypeRush home">
+        <span class="logo-icon">T</span> TypeRush<span class="dot">.</span>
+      </a>
+      <span class="tagline">PRACTICE. IMPROVE. REPEAT.</span>
+    </header>
+
+    <section class="intro">
+      <p class="eyebrow">THE ULTIMATE TYPING CHALLENGE</p>
+      <h1>Find your <span>flow.</span></h1>
+      <p class="subtitle">How fast can your fingers go?</p>
+    </section>
+
+    <section class="game-card">
+      <div class="settings">
+        <div>
+          <label class="section-label" for="duration">CHOOSE YOUR CHALLENGE</label>
+          <div class="time-options" id="duration">
+            <button class="time-btn active" data-minutes="1">1 min</button>
+            <button class="time-btn" data-minutes="5">5 min</button>
+            <button class="time-btn" data-minutes="10">10 min</button>
+            <button class="time-btn" data-minutes="15">15 min</button>
+            <button class="time-btn" data-minutes="30">30 min</button>
+          </div>
+        </div>
+        <button id="startBtn" class="start-btn">Start game <span>→</span></button>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-label">TIME LEFT</span>
+          <strong id="timer">01:00</strong>
+        </div>
+        <div class="stat">
+          <span class="stat-label">SPEED</span>
+          <strong><span id="wpm">0</span> <small>WPM</small></strong>
+        </div>
+        <div class="stat">
+          <span class="stat-label">ACCURACY</span>
+          <strong><span id="accuracy">100</span><small>%</small></strong>
+        </div>
+        <div class="stat">
+          <span class="stat-label">LEVEL</span>
+          <strong id="level">1</strong>
+        </div>
+      </div>
+
+      <div class="level-track">
+        <div class="level-info">
+          <span id="levelName">Level 1 · Beginner</span>
+          <span id="nextLevel">Next level: 20 WPM</span>
+        </div>
+        <div class="track"><div id="levelProgress"></div></div>
+      </div>
+
+      <div class="typing-area">
+        <div class="passage-heading">
+          <span>TYPE THE TEXT BELOW</span>
+          <span id="passageNumber">PASSAGE 01</span>
+        </div>
+        <div id="passage" class="passage" aria-label="Text to type"></div>
+        <label class="section-label" for="typingInput">YOUR INPUT</label>
+        <textarea
+          id="typingInput"
+          placeholder="Press Start game, then type here..."
+          rows="4"
+          spellcheck="false"
+          autocomplete="off"
+          autocapitalize="off"
+          disabled
+        ></textarea>
+        <div class="typing-footer">
+          <span id="typingHint">Ready when you are.</span>
+          <span><kbd>Tab</kbd> Focus your typing box</span>
+        </div>
+      </div>
+
+      <div class="game-actions">
+        <p>Keep typing accurately to unlock harder levels.</p>
+        <button id="resetBtn" class="reset-btn">↻ Restart</button>
+      </div>
+    </section>
+
+    <section id="results" class="results" hidden>
+      <p class="eyebrow">CHALLENGE COMPLETE</p>
+      <h2>Nice work<span class="dot">!</span></h2>
+      <p class="subtitle">Here's how you performed.</p>
+      <div class="result-grid">
+        <div><span>Final speed</span><strong id="finalWpm">0 WPM</strong></div>
+        <div><span>Accuracy</span><strong id="finalAccuracy">100%</strong></div>
+        <div><span>Level reached</span><strong id="finalLevel">1</strong></div>
+        <div><span>Characters typed</span><strong id="finalChars">0</strong></div>
+      </div>
+      <button id="playAgainBtn" class="start-btn">Play again →</button>
+    </section>
+
+    <footer>Built to make every keystroke count. <span>© TypeRush</span></footer>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
