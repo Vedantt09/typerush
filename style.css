@@ -61,6 +61,7 @@ button { cursor: pointer; }
 }
 
 .dot, .intro h1 span { color: var(--green); }
+
 .tagline, .eyebrow, .section-label, .stat-label,
 .passage-heading, .typing-footer, .level-info {
   font-size: 10px;
@@ -70,15 +71,26 @@ button { cursor: pointer; }
 
 .tagline, .section-label, .stat-label,
 .passage-heading, .typing-footer, .level-info,
-.game-actions p, footer { color: var(--muted); }
+.game-actions p, footer {
+  color: var(--muted);
+}
 
-.intro { text-align: center; padding: 52px 0 34px; }
-.eyebrow { color: var(--green); margin: 0 0 12px; }
+.intro {
+  text-align: center;
+  padding: 46px 0 34px;
+}
+
+.eyebrow {
+  color: var(--green);
+  margin: 0 0 12px;
+}
+
 .intro h1, .results h2 {
   margin: 0;
   font-size: clamp(36px, 7vw, 54px);
   letter-spacing: -2px;
 }
+
 .subtitle { color: var(--muted); margin: 10px 0 0; }
 
 .game-card, .results {
@@ -93,6 +105,7 @@ button { cursor: pointer; }
 .section-label { display: block; margin-bottom: 12px; }
 
 .time-options { display: flex; flex-wrap: wrap; gap: 7px; }
+
 .time-btn {
   padding: 10px 13px;
   color: var(--muted);
@@ -102,7 +115,9 @@ button { cursor: pointer; }
   font-size: 12px;
   transition: .15s ease;
 }
+
 .time-btn:hover { border-color: var(--green); color: var(--text); }
+
 .time-btn.active {
   color: var(--green);
   border-color: var(--green);
@@ -118,6 +133,7 @@ button { cursor: pointer; }
   font-weight: 800;
   white-space: nowrap;
 }
+
 .start-btn:hover { filter: brightness(1.08); }
 .start-btn span { margin-left: 10px; }
 
@@ -127,12 +143,14 @@ button { cursor: pointer; }
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
 }
+
 .stat { display: flex; flex-direction: column; gap: 8px; }
 .stat strong { font-size: 27px; font-variant-numeric: tabular-nums; }
 .stat strong small { color: var(--muted); font-size: 11px; }
 
 .level-track { padding: 19px 0 24px; }
 .level-info { font-size: 10px; letter-spacing: .3px; }
+
 .track {
   height: 5px;
   margin-top: 10px;
@@ -140,6 +158,7 @@ button { cursor: pointer; }
   border-radius: 99px;
   overflow: hidden;
 }
+
 #levelProgress {
   width: 0;
   height: 100%;
@@ -154,7 +173,9 @@ button { cursor: pointer; }
   border-radius: 12px;
   padding: 19px;
 }
+
 .passage-heading { font-size: 9px; }
+
 .passage {
   margin: 24px 0;
   min-height: 105px;
@@ -165,12 +186,15 @@ button { cursor: pointer; }
   color: #788398;
   white-space: pre-wrap;
 }
+
 .passage .correct { color: var(--green); }
+
 .passage .incorrect {
   color: var(--red);
   background: #ff737d20;
   border-radius: 2px;
 }
+
 .passage .current {
   border-left: 2px solid var(--green);
   margin-left: -2px;
@@ -191,15 +215,18 @@ button { cursor: pointer; }
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-size: 14px;
 }
+
 #typingInput:focus { border-color: var(--green); }
 #typingInput:disabled { opacity: .65; cursor: not-allowed; }
 #typingInput::placeholder { color: #677187; }
+
 .typing-footer {
   margin-top: 12px;
   font-size: 10px;
   letter-spacing: 0;
   flex-wrap: wrap;
 }
+
 kbd {
   padding: 3px 6px;
   background: #2a3142;
@@ -209,6 +236,7 @@ kbd {
 
 .game-actions { margin-top: 17px; }
 .game-actions p { margin: 0; font-size: 12px; }
+
 .reset-btn {
   color: var(--muted);
   border: 1px solid var(--border);
@@ -217,10 +245,12 @@ kbd {
   border-radius: 8px;
   white-space: nowrap;
 }
+
 .reset-btn:hover { color: var(--text); }
 
 .results { margin-top: 20px; text-align: center; }
 .results h2 { font-size: 36px; }
+
 .result-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -228,6 +258,7 @@ kbd {
   margin: 26px 0;
   text-align: left;
 }
+
 .result-grid div {
   display: flex;
   flex-direction: column;
@@ -237,6 +268,7 @@ kbd {
   border: 1px solid var(--border);
   border-radius: 10px;
 }
+
 .result-grid span { color: var(--muted); font-size: 12px; }
 .result-grid strong { font-size: 24px; }
 .results .start-btn { width: 100%; }
@@ -245,6 +277,128 @@ footer {
   margin-top: 26px;
   font-size: 11px;
   flex-wrap: wrap;
+}
+
+/* ===== PLAYER PROFILE & GAMIFICATION ===== */
+
+.player-card {
+  padding: 22px;
+  margin-top: 24px;
+  background: linear-gradient(135deg, #1d2631, #191e2b 65%);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 12px 36px #00000020;
+}
+
+.player-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.player-avatar {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  background: var(--green);
+  color: #151b10;
+  font-size: 25px;
+  font-weight: 900;
+}
+
+.player-details { min-width: 0; flex: 1; }
+
+.player-label {
+  margin: 0 0 5px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+}
+
+.player-details h2 { margin: 0; font-size: 20px; }
+
+.player-details > p:last-child {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.xp-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 12px;
+  border: 1px solid #b8f56a40;
+  border-radius: 9px;
+  background: #b8f56a10;
+  color: var(--green);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.xp-info {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 22px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.xp-track {
+  height: 8px;
+  margin-top: 9px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #303748;
+}
+
+#xpProgressFill {
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #8bdc42, var(--green));
+  box-shadow: 0 0 12px #b8f56a35;
+  transition: width .45s ease;
+}
+
+.player-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.player-stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 13px;
+  background: #10131c80;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.player-stats span {
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: .7px;
+  line-height: 1.5;
+}
+
+.player-stats strong {
+  font-size: 23px;
+  font-variant-numeric: tabular-nums;
+}
+
+.xp-message {
+  margin: 17px 0 0;
+  color: var(--green);
+  font-size: 12px;
 }
 
 [hidden] { display: none !important; }
@@ -266,4 +420,14 @@ footer {
   .game-actions { align-items: flex-start; }
   .game-actions p { max-width: 65%; line-height: 1.6; }
   .level-info { font-size: 9px; }
+
+  .player-card { padding: 16px; }
+  .player-avatar { width: 43px; height: 43px; }
+  .player-details h2 { font-size: 17px; }
+  .xp-badge { padding: 8px; font-size: 11px; }
+  .player-stats { gap: 6px; }
+  .player-stats > div { padding: 9px 7px; }
+  .player-stats span { font-size: 8px; }
+  .player-stats strong { font-size: 19px; }
+  .xp-info { font-size: 10px; }
 }
