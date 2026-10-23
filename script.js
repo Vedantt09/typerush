@@ -65,20 +65,169 @@ const resultsEl = $("results");
 
 const timeButtons = [...document.querySelectorAll(".time-btn")];
 
+// ===== PLAYER PROFILE & XP =====
+
+const PLAYER_STORAGE_KEY = "typerush_player_v1";
+
+function createNewPlayer() {
+  return {
+    xp: 0,
+    bestWpm: 0,
+    testsCompleted: 0,
+    lastPlayedDate: null
+  };
+}
+
+function loadPlayer() {
+  try {
+    const saved = localStorage.getItem(PLAYER_STORAGE_KEY);
+
+    if (!saved) return createNewPlayer();
+
+    const data = JSON.parse(saved);
+
+    if (
+      !data ||
+      typeof data !== "object" ||
+      !Number.isSafeInteger(data.xp) ||
+      data.xp < 0 ||
+      !Number.isFinite(data.bestWpm) ||
+      data.bestWpm < 0 ||
+      !Number.isSafeInteger(data.testsCompleted) ||
+      data.testsCompleted < 0
+    ) {
+      return createNewPlayer();
+    }
+
+    return {
+      xp: data.xp,
+      bestWpm: data.bestWpm,
+      testsCompleted: data.testsCompleted,
+      lastPlayedDate:
+        typeof data.lastPlayedDate === "string"
+          ? data.lastPlayedDate
+          : null
+    };
+  } catch {
+    return createNewPlayer();
+  }
+}
+
+let player = loadPlayer();
+
+function savePlayer() {
+  try {
+    localStorage.setItem(
+      PLAYER_STORAGE_KEY,
+      JSON.stringify(player)
+    );
+  } catch (error) {
+    console.warn("Could not save TypeRush progress.", error);
+  }
+}
+
+function getPlayerLevel(xp) {
+  return Math.floor(
+    (Math.sqrt(1 + (8 * xp) / 100) - 1) / 2
+  ) + 1;
+}
+
+function getXpAtLevel(level) {
+  return 50 * (level - 1) * level;
+}
+
+function getPlayerRank(level) {
+  if (level >= 20) return "Typing Legend";
+  if (level >= 15) return "Keyboard Master";
+  if (level >= 10) return "Speed Demon";
+  if (level >= 7) return "Typing Pro";
+  if (level >= 4) return "Rising Typist";
+  if (level >= 2) return "Quick Fingers";
+  return "Rookie Typist";
+}
+
+function renderPlayerProfile() {
+  const level = getPlayerLevel(player.xp);
+  const currentLevelXp = getXpAtLevel(level);
+  const nextLevelXp = getXpAtLevel(level + 1);
+  const progressXp = player.xp - currentLevelXp;
+  const requiredXp = nextLevelXp - currentLevelXp;
+  const percent = (progressXp / requiredXp) * 100;
+
+  $("playerRank").textContent = getPlayerRank(level);
+  $("playerLevel").textContent =
+    `Level ${level} · ${player.xp} XP`;
+
+  $("totalXp").textContent = `${player.xp} XP`;
+  $("lifetimeXp").textContent = player.xp;
+  $("bestWpm").textContent = player.bestWpm;
+  $("testsCompleted").textContent = player.testsCompleted;
+
+  $("xpProgressText").textContent =
+    `${progressXp} / ${requiredXp} XP`;
+
+  $("xpNextLevel").textContent =
+    `${nextLevelXp - player.xp} XP to next level`;
+
+  $("xpProgressFill").style.width = `${percent}%`;
+
+  $("xpProgressBar").setAttribute(
+    "aria-valuenow",
+    Math.round(percent)
+  );
+
+  $("xpProgressBar").setAttribute(
+    "aria-valuetext",
+    `${progressXp} of ${requiredXp} XP toward level ${level + 1}`
+  );
+}
+
+function awardSessionXP(wpm, accuracy) {
+  const oldLevel = getPlayerLevel(player.xp);
+
+  let earned = 50;
+
+  if (accuracy >= 95) earned += 20;
+  if (wpm >= 40) earned += 15;
+
+  player.xp += earned;
+  player.testsCompleted += 1;
+  player.bestWpm = Math.max(player.bestWpm, wpm);
+  player.lastPlayedDate = new Date().toLocaleDateString("en-CA");
+
+  savePlayer();
+  renderPlayerProfile();
+
+  const newLevel = getPlayerLevel(player.xp);
+
+  $("xpMessage").textContent =
+    newLevel > oldLevel
+      ? `🎉 Level up! You're now level ${newLevel}. +${earned} XP earned!`
+      : `✨ +${earned} XP earned! Keep going!`;
+
+  return earned;
+}
+
+// ===== GAME STATE =====
+
 let selectedMinutes = 1;
 let remainingSeconds = 60;
 let timerId = null;
 let running = false;
 let finished = false;
 let startTime = null;
-let elapsedBeforePause = 0;
 let currentPassage = "";
 let passageNumber = 0;
-let totalCorrect = 0;
-let totalIncorrect = 0;
-let totalCharacters = 0;
 let currentLevel = 1;
 let usedPassages = [];
+
+let sessionCorrect = 0;
+let sessionIncorrect = 0;
+let sessionCharacters = 0;
+
+let passageCorrect = 0;
+let passageIncorrect = 0;
+let passageCharacters = 0;
 
 function getLevel(wpm) {
   return Math.min(5, Math.floor(wpm / 20) + 1);
@@ -103,10 +252,12 @@ function formatTime(seconds) {
 }
 
 function getElapsedSeconds() {
-  if (!startTime) return 0;
+  if (startTime === null) return 0;
 
-  return elapsedBeforePause +
-    (Date.now() - startTime) / 1000;
+  return Math.min(
+    selectedMinutes * 60,
+    Math.max(0, (Date.now() - startTime) / 1000)
+  );
 }
 
 function getWpm() {
@@ -114,16 +265,15 @@ function getWpm() {
 
   if (elapsed <= 0) return 0;
 
-  // Standard gross typing speed: five characters = one word.
-  return Math.round((totalCharacters / 5) / elapsed);
+  return Math.round((sessionCharacters / 5) / elapsed);
 }
 
 function getAccuracy() {
-  const attempts = totalCorrect + totalIncorrect;
+  const attempts = sessionCorrect + sessionIncorrect;
 
   if (attempts === 0) return 100;
 
-  return Math.round((totalCorrect / attempts) * 100);
+  return Math.round((sessionCorrect / attempts) * 100);
 }
 
 function updateStats() {
@@ -141,25 +291,24 @@ function updateStats() {
 
   const nextThreshold = currentLevel * 20;
 
-  $("nextLevel").textContent = currentLevel === 5
-    ? "Maximum level reached!"
-    : `Next level: ${nextThreshold} WPM`;
+  $("nextLevel").textContent =
+    currentLevel === 5
+      ? "Maximum level reached!"
+      : `Next level: ${nextThreshold} WPM`;
 
   const progress = currentLevel === 5
     ? 100
-    : Math.min(100, (wpm % 20) / 20 * 100);
+    : ((wpm - (currentLevel - 1) * 20) / 20) * 100;
 
-  $("levelProgress").style.width = `${progress}%`;
+  $("levelProgress").style.width =
+    `${Math.max(0, Math.min(100, progress))}%`;
 }
 
 function choosePassage() {
-  const wpm = getWpm();
-  const level = getLevel(wpm);
+  const level = getLevel(getWpm());
 
-  // Only offer passages at or below the player's current level.
   let available = passages.filter((p) => p.level <= level);
 
-  // Avoid repeating passages until the available set is exhausted.
   let unused = available.filter(
     (p) => !usedPassages.includes(p.text)
   );
@@ -181,6 +330,11 @@ function choosePassage() {
     `PASSAGE ${String(passageNumber).padStart(2, "0")}`;
 
   inputEl.value = "";
+
+  passageCorrect = 0;
+  passageIncorrect = 0;
+  passageCharacters = 0;
+
   renderPassage();
 }
 
@@ -207,18 +361,23 @@ function renderPassage() {
 
 function startGame() {
   clearInterval(timerId);
+  timerId = null;
 
   running = false;
   finished = false;
   startTime = null;
-  elapsedBeforePause = 0;
   remainingSeconds = selectedMinutes * 60;
   passageNumber = 0;
-  totalCorrect = 0;
-  totalIncorrect = 0;
-  totalCharacters = 0;
   currentLevel = 1;
   usedPassages = [];
+
+  sessionCorrect = 0;
+  sessionIncorrect = 0;
+  sessionCharacters = 0;
+
+  passageCorrect = 0;
+  passageIncorrect = 0;
+  passageCharacters = 0;
 
   resultsEl.hidden = true;
   inputEl.disabled = false;
@@ -226,7 +385,7 @@ function startGame() {
 
   timerEl.textContent = formatTime(remainingSeconds);
   $("typingHint").textContent = "Start typing to begin the timer.";
-  startBtn.textContent = "Game ready ✓";
+  startBtn.innerHTML = 'Start game <span>→</span>';
 
   choosePassage();
   updateStats();
@@ -239,15 +398,15 @@ function beginTimer() {
   running = true;
   startTime = Date.now();
 
-  $("typingHint").textContent = "Game in progress — keep going!";
+  $("typingHint").textContent =
+    "Game in progress — keep going!";
+
   startBtn.textContent = "Playing...";
 
   timerId = setInterval(() => {
-    const elapsed = Math.floor(getElapsedSeconds());
-
     remainingSeconds = Math.max(
       0,
-      selectedMinutes * 60 - elapsed
+      selectedMinutes * 60 - Math.floor(getElapsedSeconds())
     );
 
     timerEl.textContent = formatTime(remainingSeconds);
@@ -260,44 +419,55 @@ function beginTimer() {
 }
 
 function handleTyping() {
-  if (!running && !finished && inputEl.value.length > 0) {
+  if (finished) return;
+
+  if (!running && inputEl.value.length > 0) {
     beginTimer();
   }
 
-  if (!running || finished) return;
+  if (!running) return;
 
   let typed = inputEl.value;
 
-  // Do not allow typing beyond the current passage.
   if (typed.length > currentPassage.length) {
     typed = typed.slice(0, currentPassage.length);
     inputEl.value = typed;
   }
 
-  // Recalculate this passage's character counts so backspace
-  // and corrections do not inflate the score.
-  totalCorrect = 0;
-  totalIncorrect = 0;
-  totalCharacters = typed.length;
+  // Recalculate the current passage.
+  // Previously completed passages remain included in session totals.
+  passageCorrect = 0;
+  passageIncorrect = 0;
+  passageCharacters = typed.length;
 
   for (let i = 0; i < typed.length; i++) {
     if (typed[i] === currentPassage[i]) {
-      totalCorrect++;
+      passageCorrect++;
     } else {
-      totalIncorrect++;
+      passageIncorrect++;
     }
   }
+
+  sessionCorrect += passageCorrect - (sessionCorrect - sessionCorrect);
+  // Replace the current passage contribution with its latest values.
+  // These baselines prevent backspace from inflating statistics.
+  sessionCorrect = completedCorrect + passageCorrect;
+  sessionIncorrect = completedIncorrect + passageIncorrect;
+  sessionCharacters = completedCharacters + passageCharacters;
 
   renderPassage();
   updateStats();
 
   if (typed.length === currentPassage.length) {
-    const completedCorrectly =
-      typed === currentPassage;
+    const completedCorrectly = typed === currentPassage;
 
     $("typingHint").textContent = completedCorrectly
       ? "Perfect passage! Next one..."
       : "Passage complete. Keep improving!";
+
+    completedCorrect += passageCorrect;
+    completedIncorrect += passageIncorrect;
+    completedCharacters += passageCharacters;
 
     choosePassage();
     updateStats();
@@ -305,7 +475,10 @@ function handleTyping() {
 }
 
 function endGame() {
+  if (finished) return;
+
   clearInterval(timerId);
+  timerId = null;
 
   running = false;
   finished = true;
@@ -316,20 +489,44 @@ function endGame() {
 
   updateStats();
 
-  $("typingHint").textContent = "Time is up! Challenge completed.";
+  const finalWpm = getWpm();
+  const finalAccuracy = getAccuracy();
+  const earnedXP = awardSessionXP(finalWpm, finalAccuracy);
+
+  $("typingHint").textContent =
+    `Challenge completed! You earned ${earnedXP} XP.`;
+
   startBtn.textContent = "Game finished";
 
-  $("finalWpm").textContent = `${getWpm()} WPM`;
-  $("finalAccuracy").textContent = `${getAccuracy()}%`;
+  $("finalWpm").textContent = `${finalWpm} WPM`;
+  $("finalAccuracy").textContent = `${finalAccuracy}%`;
   $("finalLevel").textContent =
     `${currentLevel} · ${getLevelName(currentLevel)}`;
-  $("finalChars").textContent = totalCharacters;
+  $("finalChars").textContent = sessionCharacters;
+  $("finalXp").textContent = `+${earnedXP} XP`;
+  $("finalBest").textContent = `${player.bestWpm} WPM`;
 
   resultsEl.hidden = false;
   resultsEl.scrollIntoView({
     behavior: "smooth",
     block: "nearest"
   });
+}
+
+// Completed passage totals.
+let completedCorrect = 0;
+let completedIncorrect = 0;
+let completedCharacters = 0;
+
+function resetSessionCounters() {
+  completedCorrect = 0;
+  completedIncorrect = 0;
+  completedCharacters = 0;
+}
+
+function startFreshGame() {
+  resetSessionCounters();
+  startGame();
 }
 
 timeButtons.forEach((button) => {
@@ -342,23 +539,21 @@ timeButtons.forEach((button) => {
       btn.classList.toggle("active", btn === button);
     });
 
-    startGame();
+    startFreshGame();
   });
 });
 
 startBtn.addEventListener("click", () => {
   if (finished || running) return;
 
-  if (!startTime) {
-    $("typingHint").textContent = "Start typing to begin the timer.";
-    inputEl.focus();
-  }
+  inputEl.focus();
 });
 
 inputEl.addEventListener("input", handleTyping);
 
-resetBtn.addEventListener("click", startGame);
-$("playAgainBtn").addEventListener("click", startGame);
+resetBtn.addEventListener("click", startFreshGame);
+$("playAgainBtn").addEventListener("click", startFreshGame);
 
-// Initialize the game.
-startGame();
+// Initialize.
+renderPlayerProfile();
+startFreshGame();
